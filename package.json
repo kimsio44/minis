@@ -1,14 +1,21 @@
 {
-  "name": "mon-projet",
+  "name": "mini-discord",
   "version": "1.0.0",
+  "description": "Mini Discord project",
+  "main": "serveur.js",
   "scripts": {
-    "start": "node serveur.js",
-  },  <--- virgule en trop ici
+    "start": "node serveur.js"
+  },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0",
+    "socket.io": "^4.7.2"
   }
-}
+},
+
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0",
+    "socket.io": "^4.7.2"
   }
 }

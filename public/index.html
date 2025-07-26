@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mini Discord</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #messages { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; }
+    #messages li { padding: 5px; border-bottom: 1px solid #ddd; }
+    #messages li.admin { color: red; font-weight: bold; }
+    #salons { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Mini Discord</h1>
+
+  <div>
+    <label>Pseudo : <input id="pseudo" /></label>
+    <label>Salon : <input id="salon" value="general" /></label>
+    <button id="joinBtn">Rejoindre</button>
+  </div>
+
+  <div id="chat" style="display:none;">
+    <ul id="messages"></ul>
+    <input id="inputMsg" autocomplete="off" /><button id="sendBtn">Envoyer</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let userRole = "user";
+
+    const joinBtn = document.getElementById("joinBtn");
+    const pseudoInput = document.getElementById("pseudo");
+    const salonInput = document.getElementById("salon");
+    const chatDiv = document.getElementById("chat");
+    const messagesList = document.getElementById("messages");
+    const inputMsg = document.getElementById("inputMsg");
+    const sendBtn = document.getElementById("sendBtn");
+
+    joinBtn.onclick = () => {
+      const pseudo = pseudoInput.value.trim();
+      const salon = salonInput.value.trim();
+      if (!pseudo || !salon) {
+        alert("Pseudo et salon obligatoires");
+        return;
+      }
+      socket.emit("join", { pseudo, salon });
+      chatDiv.style.display = "block";
+    };
+
+    socket.on("history", (messages) => {
+      messagesList.innerHTML = "";
+      messages.forEach(msg => addMessage(msg));
+    });
+
+    socket.on("chat message", (msg) => {
+      addMessage(msg);
+    });
+
+    socket.on("user joined", ({ pseudo, role }) => {
+      addSystemMessage(`${pseudo} a rejoint le salon (${role})`);
+      if (pseudo === pseudoInput.value.trim()) {
+        userRole = role;
+      }
+    });
+
+    socket.on("delete message", (msgId) => {
+      const elem = document.getElementById(msgId);
+      if (elem) elem.remove();
+    });
+
+    sendBtn.onclick = () => {
+      const text = inputMsg.value.trim();
+      if (!text) return;
+      socket.emit("chat message", text);
+      inputMsg.value = "";
+    };
+
+    function addMessage(msg) {
+      const li = document.createElement("li");
+      li.id = msg.id || "";
+      li.textContent = `[${new Date(msg.createdAt).toLocaleTimeString()}] ${msg.pseudo}: ${msg.text}`;
+      if (msg.pseudo === pseudoInput.value.trim() && userRole === "admin") {
+        li.classList.add("admin");
+        const btnDelete = document.createElement("button");
+        btnDelete.textContent = "X";
+        btnDelete.style.marginLeft = "10px";
+        btnDelete.onclick = () => {
+          socket.emit("delete message", msg.id);
+        };
+        li.appendChild(btnDelete);
+      }
+      messagesList.appendChild(li);
+      messagesList.scrollTop = messagesList.scrollHeight;
+    }
+
+    function addSystemMessage(text) {
+      const li = document.createElement("li");
+      li.textContent = text;
+      li.style.fontStyle = "italic";
+      messagesList.appendChild(li);
+      messagesList.scrollTop = messagesList.scrollHeight;
+    }
+  </script>
+</body>
+</html>
